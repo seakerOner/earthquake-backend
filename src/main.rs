@@ -4,13 +4,15 @@ use http::{
     header::{AUTHORIZATION, CONTENT_TYPE, ORIGIN},
 };
 use tokio::{net::TcpListener, time::Duration};
-use tower_http::cors::CorsLayer;
-use tracing::{Level, error, info, instrument::WithSubscriber};
+use tower_http::{add_extension::AddExtensionLayer, cors::CorsLayer};
+use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 mod api;
 use api::earthquakes;
 mod clients;
-use clients::{run_usgs_realtime_data_updater, usgs::*};
+use clients::run_usgs_realtime_data_updater;
+mod db;
+use db::{DbPool, init_db};
 
 #[tokio::main]
 async fn main() {
@@ -20,16 +22,24 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("Failed to setup tracing");
 
+    let database: DbPool = init_db().await.unwrap();
+
     let cors = CorsLayer::new()
         .allow_origin(tower_http::cors::Any)
         .allow_methods([Method::GET])
         .allow_headers([ORIGIN, CONTENT_TYPE, AUTHORIZATION])
         .max_age(Duration::from_secs(60 * 60));
 
+    let db_for_updater = database.clone();
+
     let app = Router::new()
         .route("/", get(root))
         .merge(earthquakes::router())
+        .layer(AddExtensionLayer::new(database))
         .layer(cors);
+
+    // Background task getting new data to the database every 10 seconds
+    tokio::spawn(run_usgs_realtime_data_updater(10, db_for_updater));
 
     let listener = match TcpListener::bind("localhost:42069").await {
         Ok(l) => l,
@@ -38,9 +48,6 @@ async fn main() {
             panic!("Failed binding TcpListener to the given address: {}", e);
         }
     };
-
-    // Background task getting new data to the database every 10 seconds
-    tokio::spawn(run_usgs_realtime_data_updater(10));
 
     info!(r#"Serving at: http://localhost:42069"#);
 

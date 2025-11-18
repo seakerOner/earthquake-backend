@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: earthquake_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: earthquakes
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  rust:
+    image: rust:1.90
+    container_name: earthquake_rust
+    volumes:
+      - .:/usr/src/app
+    command: tail -f /dev/null
+    depends_on:
+      - db
+
+volumes:
+  db_data:

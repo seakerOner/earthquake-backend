@@ -1,11 +1,12 @@
 use serde::Deserialize;
-use std::fmt::{Display, write};
-use tracing::info;
+use std::fmt::Display;
+use tracing::error;
 
 pub struct Usgs {
     base_url: String,
 }
 
+#[allow(dead_code)]
 pub enum UsgsMethods {
     KnownParameterValues,
     AppWADL,
@@ -30,6 +31,7 @@ impl Display for UsgsMethods {
     }
 }
 
+#[allow(dead_code)]
 pub enum QueryFormats {
     GeoJSON,
     Kml,
@@ -48,6 +50,7 @@ impl Display for QueryFormats {
     }
 }
 
+#[allow(dead_code)]
 pub enum Time {
     StartTime(String),
     EndTime(String),
@@ -64,6 +67,7 @@ impl Display for Time {
     }
 }
 
+#[allow(dead_code)]
 pub enum Rectangle {
     MinLatitude(i8),
     MinLongitude(i16),
@@ -82,6 +86,7 @@ impl Display for Rectangle {
     }
 }
 
+#[allow(dead_code)]
 pub enum Circle {
     Latitude(i8),
     Longitude(i8),
@@ -100,6 +105,7 @@ impl Display for Circle {
     }
 }
 
+#[allow(dead_code)]
 pub enum ExtParameters {
     OrderBy(OrderingOptions),
     AlertLevel(AlertLevelOptions),
@@ -118,6 +124,7 @@ impl Display for ExtParameters {
     }
 }
 
+#[allow(dead_code)]
 pub enum OrderingOptions {
     Time,
     TimeAsc,
@@ -136,6 +143,7 @@ impl Display for OrderingOptions {
     }
 }
 
+#[allow(dead_code)]
 pub enum AlertLevelOptions {
     Green,
     Yellow,
@@ -164,7 +172,7 @@ impl Usgs {
         &self,
         format: QueryFormats,
         params: Vec<impl Display>,
-    ) -> Result<Vec<Earthquake>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Earthquake>, ()> {
         let mut url = format!("{}query?{}", self.base_url, format);
 
         for p in params {
@@ -172,9 +180,27 @@ impl Usgs {
             url.push_str(&p.to_string());
         }
 
-        let resp = reqwest::get(url).await?.text().await?;
+        let resp = match reqwest::get(url).await {
+            Ok(r) => match r.text().await {
+                Ok(m) => m,
+                Err(e) => {
+                    error!("Error getting response from API; Error: {}", e);
+                    return Err(());
+                }
+            },
+            Err(e) => {
+                error!("Error fetching API; Error: {}", e);
+                return Err(());
+            }
+        };
 
-        let json: UsgsResponse = serde_json::from_str(&resp)?;
+        let json: UsgsResponse = match serde_json::from_str(&resp) {
+            Ok(j) => j,
+            Err(e) => {
+                error!("Error parsing string to Json on API response; Error: {}", e);
+                return Err(());
+            }
+        };
 
         Ok(json.into_earthquakes())
     }
