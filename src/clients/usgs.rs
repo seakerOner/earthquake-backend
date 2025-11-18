@@ -259,7 +259,7 @@ pub struct UsgsGeometry {
     pub coordinates: [f64; 3],
 }
 
-#[derive(Debug, Deserialize, Serialize, FromRow, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, FromRow, ToSchema, Clone)]
 pub struct Earthquake {
     pub id: String,
     pub magnitude: f32,
@@ -268,4 +268,74 @@ pub struct Earthquake {
     pub latitude: f64,
     pub longitude: f64,
     pub depth: f64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::clients::{QueryFormats, Usgs};
+
+    #[tokio::test]
+    async fn test_usgs_url_construction() {
+        let usgs = Usgs::new();
+
+        let params = vec![
+            Time::StartTime("2025-11-18".into()),
+            Time::EndTime("2025-11-19".into()),
+        ];
+
+        let mut url = format!("{}query?{}", usgs.base_url, QueryFormats::GeoJSON);
+        for p in &params {
+            url.push('&');
+            url.push_str(&p.to_string());
+        }
+
+        let expected_url = format!(
+            "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2025-11-18&endtime=2025-11-19"
+        );
+
+        assert_eq!(url, expected_url);
+    }
+}
+
+#[tokio::test]
+async fn test_into_earthquakes() {
+    let response = UsgsResponse {
+        features: vec![
+            UsgsFeature {
+                id: "eq1".into(),
+                properties: UsgsProperties {
+                    mag: Some(5.5),
+                    place: Some("Place A".into()),
+                    time: Some(1_700_000_000),
+                },
+                geometry: UsgsGeometry {
+                    coordinates: [10.0, 20.0, 5.0],
+                },
+            },
+            UsgsFeature {
+                id: "eq2".into(),
+                properties: UsgsProperties {
+                    mag: None,
+                    place: Some("Place B".into()),
+                    time: Some(1_700_000_001),
+                },
+                geometry: UsgsGeometry {
+                    coordinates: [11.0, 21.0, 6.0],
+                },
+            },
+        ],
+    };
+
+    let earthquakes = response.into_earthquakes();
+
+    assert_eq!(earthquakes.len(), 1);
+    let eq = &earthquakes[0];
+    assert_eq!(eq.id, "eq1");
+    assert_eq!(eq.magnitude, 5.5);
+    assert_eq!(eq.place, "Place A");
+    assert_eq!(eq.time, 1_700_000_000);
+    assert_eq!(eq.latitude, 20.0);
+    assert_eq!(eq.longitude, 10.0);
+    assert_eq!(eq.depth, 5.0);
 }
