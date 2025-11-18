@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::fmt::Display;
 use tracing::error;
+use utoipa::ToSchema;
 
 pub struct Usgs {
     base_url: String,
@@ -258,7 +259,7 @@ pub struct UsgsGeometry {
     pub coordinates: [f64; 3],
 }
 
-#[derive(Debug, Deserialize, Serialize, FromRow)]
+#[derive(Debug, Deserialize, Serialize, FromRow, ToSchema)]
 pub struct Earthquake {
     pub id: String,
     pub magnitude: f32,

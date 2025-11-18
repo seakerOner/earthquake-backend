@@ -6,16 +6,20 @@ use axum::{
 };
 use http::StatusCode;
 use serde::Deserialize;
+use utoipa::{IntoParams, ToSchema};
 
-use crate::db::{DbPool, db_query_get_earthquakes_by_id, db_query_get_earthquakes_filtered};
+use crate::{
+    clients::usgs::Earthquake,
+    db::{DbPool, db_query_get_earthquakes_by_id, db_query_get_earthquakes_filtered},
+};
 
 pub fn router() -> Router {
     Router::new()
         .route("/earthquakes", get(earthquakes))
-        .route("/earthquakes/:id", get(earthquakes_by_id))
+        .route("/earthquakes/{id}", get(earthquakes_by_id))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema, IntoParams)]
 pub struct EarthquakeQuery {
     pub min_magnitude: Option<f32>,
     pub max_magnitude: Option<f32>,
@@ -24,6 +28,15 @@ pub struct EarthquakeQuery {
     pub limit: Option<i64>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/earthquakes",
+    params(EarthquakeQuery),
+    responses(
+        (status = 200, description = "List recent earthquakes", body = [Earthquake]),
+        (status = 500, description = "Internal server error")
+    )
+)]
 async fn earthquakes(
     Extension(db): Extension<DbPool>,
     Query(params): Query<EarthquakeQuery>,
@@ -37,6 +50,18 @@ async fn earthquakes(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/earthquakes/{id}",
+    responses(
+        (status = 200, description = "Fetch earthquake by ID", body = Earthquake),
+        (status = 404, description = "Earthquake not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    params(
+        ("id" = String, Path, description = "Earthquake ID")
+    )
+)]
 async fn earthquakes_by_id(
     Extension(db): Extension<DbPool>,
     Path(id): Path<String>,

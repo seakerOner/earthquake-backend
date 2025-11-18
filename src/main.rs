@@ -13,6 +13,8 @@ mod clients;
 use clients::run_usgs_realtime_data_updater;
 mod db;
 use db::{DbPool, init_db};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() {
@@ -35,6 +37,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .merge(earthquakes::router())
+        .merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", ApiDoc::openapi()))
         .layer(AddExtensionLayer::new(database))
         .layer(cors);
 
@@ -50,6 +53,8 @@ async fn main() {
     };
 
     info!(r#"Serving at: http://localhost:42069"#);
+    info!(r#"SwaggerUI OpenAPI docs: http://localhost:42069/docs"#);
+    info!(r#"OpenAPI JSON: http://localhost:42069/api-doc/openapi.json"#);
 
     if let Err(e) = axum::serve(listener, app.into_make_service()).await {
         error!("The server couldn't serve the service; Error: {}", e);
@@ -60,3 +65,18 @@ async fn main() {
 async fn root() -> &'static str {
     "Hello Gravity"
 }
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        crate::api::earthquakes::earthquakes,
+        crate::api::earthquakes::earthquakes_by_id
+    ),
+    components(
+        schemas(crate::clients::usgs::Earthquake, crate::api::earthquakes::EarthquakeQuery)
+    ),
+    tags(
+        (name = "Earthquakes", description = "Earthquake API endpoints")
+    )
+)]
+pub struct ApiDoc;
