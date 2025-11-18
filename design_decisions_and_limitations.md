@@ -3,7 +3,7 @@
 ## Language & Framework
 
 - Rust + Axum was chosen to ensure high performance and safety for asynchronous data handling.
-- Axum provides direct integration with Tokio and is lightweight, ideal for RESTfil APIs.
+- Axum provides direct integration with Tokio and is lightweight, ideal for RESTfull APIs.
 
 ## Database
 
