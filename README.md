@@ -73,6 +73,6 @@ Built with **Rust (Axum)**, **SQLx**, **PostgreSQL**, and **Utoipa** for OpenAPI
 
 5. Log file
 
-    - A `tracer.log` (or whatever your configured log file name is) will be created in the same directory where `cargo run` is executed.
+    - A `earthquake.log` will be created in the same directory where `cargo run` is executed.
     Console output will show all log levels; the file logs only `INFO` and `ERROR`
 

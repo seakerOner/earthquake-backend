@@ -1,4 +1,0 @@
-[2m2025-11-18T13:23:28.503795Z[0m [32m INFO[0m [2mearthquake_backend::db[0m[2m:[0m Connected to PostgreSQL
-[2m2025-11-18T13:23:28.504772Z[0m [32m INFO[0m [2mearthquake_backend[0m[2m:[0m Serving at: http://localhost:42069
-[2m2025-11-18T13:23:28.504805Z[0m [32m INFO[0m [2mearthquake_backend[0m[2m:[0m SwaggerUI OpenAPI docs: http://localhost:42069/docs
-[2m2025-11-18T13:23:28.504831Z[0m [32m INFO[0m [2mearthquake_backend[0m[2m:[0m OpenAPI JSON: http://localhost:42069/api-doc/openapi.json
