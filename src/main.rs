@@ -6,21 +6,39 @@ use http::{
 use tokio::{net::TcpListener, time::Duration};
 use tower_http::{add_extension::AddExtensionLayer, cors::CorsLayer};
 use tracing::{Level, error, info};
-use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::{
+    EnvFilter, Layer,
+    fmt::{self},
+    layer::SubscriberExt,
+};
 mod api;
 use api::earthquakes;
 mod clients;
 use clients::run_usgs_realtime_data_updater;
 mod db;
 use db::{DbPool, init_db};
+use std::fs::OpenOptions;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() {
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::TRACE)
-        .finish();
+    let log_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("earthquake.log")
+        .expect("Cannot open log file");
+
+    let file_layer = fmt::Layer::new()
+        .with_writer(log_file)
+        .with_filter(EnvFilter::from_default_env().add_directive(Level::INFO.into()));
+
+    let console_layer = fmt::Layer::new()
+        .with_filter(EnvFilter::from_default_env().add_directive(Level::TRACE.into()));
+
+    let subscriber = tracing_subscriber::registry()
+        .with(file_layer)
+        .with(console_layer);
 
     tracing::subscriber::set_global_default(subscriber).expect("Failed to setup tracing");
 
