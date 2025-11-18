@@ -1,4 +1,5 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 use std::fmt::Display;
 use tracing::error;
 
@@ -238,26 +239,26 @@ impl UsgsResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct UsgsFeature {
     pub id: String,
     pub properties: UsgsProperties,
     pub geometry: UsgsGeometry,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct UsgsProperties {
     pub mag: Option<f32>,
     pub place: Option<String>,
     pub time: Option<i64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct UsgsGeometry {
     pub coordinates: [f64; 3],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize, FromRow)]
 pub struct Earthquake {
     pub id: String,
     pub magnitude: f32,
