@@ -34,11 +34,12 @@ Built with **Rust (Axum)**, **SQLx**, **PostgreSQL**, and **Utoipa** for OpenAPI
 ### Prerequisites
 
 - Docker & Docker Compose
-- Rust & Cargo (optional if using the Docker setup, will be installed automatically)
+- Cargo & sqlx-cli
 
 ### Steps
 
 1. **Start Docker environment**  
+
    From the project root:  
    ```bash
    docker-compose up -d 
@@ -49,18 +50,29 @@ Built with **Rust (Axum)**, **SQLx**, **PostgreSQL**, and **Utoipa** for OpenAPI
     - Install Rust if needed
 
 2. Run database migrations (in the same directory where /migrations is)
+
     ```bash
+    # To install the sqlx cli tool
+    cargo install sqlx-cli --no-default-features --features postgres,rustls
+
     cargo sqlx migrate run
     ```
+
 3. Run the application
+
     ```bash
     cargo run
     ```
+
   - The service will start at `http://localhost:42069`.
+
 4. Access OpenAPI docs
+
     - SwaggerUI: `http://localhost:42069/docs`.
     - OpenAPI JSON: `http://localhost:42069/api-doc/openapi.json`
+
 5. Log file
+
     - A `tracer.log` (or whatever your configured log file name is) will be created in the same directory where `cargo run` is executed.
     Console output will show all log levels; the file logs only `INFO` and `ERROR`
 
