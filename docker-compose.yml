@@ -17,11 +17,21 @@ services:
   rust:
     image: rust:1.90
     container_name: earthquake_rust
+    working_dir: /usr/src/app
     volumes:
       - .:/usr/src/app
-    command: tail -f /dev/null
+    command: >
+      sh -c "
+        cargo install sqlx-cli --no-default-features --features postgres,rustls &&
+        sqlx migrate run &&
+        cargo run --release
+      "
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/earthquakes
     depends_on:
       - db
+    ports:
+      - "42069:42069"
 
 volumes:
   db_data:
