@@ -62,7 +62,7 @@ async fn main() {
     // Background task getting new data to the database every 10 seconds
     tokio::spawn(run_usgs_realtime_data_updater(10, db_for_updater));
 
-    let listener = match TcpListener::bind("localhost:42069").await {
+    let listener = match TcpListener::bind("0.0.0.0:42069").await {
         Ok(l) => l,
         Err(e) => {
             error!("Server couldn't bind to port; Error: {}", e);
